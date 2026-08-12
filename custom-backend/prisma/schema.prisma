@@ -1,9 +1,36 @@
 // Prisma schema for Osdag Secure Login backend
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
+
+model User {
+  id                  String    @id @default(uuid()) @db.Uuid
+  email               String    @unique
+  passwordHash        String
+  name                String?
+  createdAt           DateTime  @default(now())
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  files               File[]
+}
+
+model File {
+  id        String   @id @default(uuid()) @db.Uuid
+  filename  String
+  path      String
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model RevokedToken {
+  jti       String   @id
+  expiresAt DateTime
+}
+

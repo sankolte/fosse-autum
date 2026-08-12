@@ -2,12 +2,438 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Osdag Secure Login Test Client</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Osdag Secure Login — Multi-Tenant Security Portal</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top left, #1e1b4b, var(--bg-dark));
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* Header & Navbar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 2rem;
+    }
+
+    .brand h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #818cf8, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    select, input, button {
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+
+    .select-input {
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .select-input:focus {
+      border-color: var(--primary);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-info { background: rgba(6, 182, 212, 0.2); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .badge-secondary { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+
+    /* Alerts */
+    #alertContainer {
+      margin-bottom: 1.5rem;
+    }
+
+    .alert {
+      padding: 0.875rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .alert-info { background: rgba(99, 102, 241, 0.2); border: 1px solid var(--primary); color: #a5b4fc; }
+    .alert-success { background: rgba(16, 185, 129, 0.2); border: 1px solid var(--success); color: #6ee7b7; }
+    .alert-danger { background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: #fca5a5; }
+    .alert-warning { background: rgba(245, 158, 11, 0.2); border: 1px solid var(--warning); color: #fde68a; }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.65rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { opacity: 0.9; }
+    .btn-outline { background: transparent; border: 1px solid var(--card-border); color: var(--text-main); }
+    .btn-outline:hover { background: rgba(255, 255, 255, 0.05); border-color: var(--primary); }
+    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+
+    /* Quick Fill Bar */
+    .quick-fill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+      background: rgba(15, 23, 42, 0.4);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px dashed var(--card-border);
+    }
+
+    .quick-fill label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .form-control {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 0.7rem 0.9rem;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 1.25rem;
+    }
+
+    .tab {
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* File List */
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.875rem;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      color: #38bdf8;
+    }
+
+    pre {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      border: 1px solid var(--card-border);
+    }
+
+    /* Grid Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-  <h1>Osdag Secure Login Client</h1>
-  <!-- Testing client UI will go here -->
+  <div class="container">
+    
+    <!-- Top Header -->
+    <header>
+      <div class="brand">
+        <h1>Osdag Secure Login Portal</h1>
+        <p>Multi-Tenant Authentication & IDOR Defense Testbed</p>
+      </div>
+
+      <div class="controls">
+        <select id="backendSelect" class="select-input">
+          <option value="custom">Custom Express + Prisma (Port 5000)</option>
+          <option value="appwrite">Appwrite BaaS Wrapper (Port 5001)</option>
+        </select>
+        <span id="serverStatusBadge" class="badge badge-secondary">Checking...</span>
+      </div>
+    </header>
+
+    <!-- Global Alert Container -->
+    <div id="alertContainer"></div>
+
+    <div class="grid">
+      
+      <!-- Left Column: Authentication & User Profile -->
+      <div>
+        
+        <!-- Quick Fill Seed Credentials -->
+        <div class="quick-fill">
+          <label>⚡ Quick Seed Fill:</label>
+          <button id="fillAlice" class="btn btn-sm btn-outline">Alice</button>
+          <button id="fillBob" class="btn btn-sm btn-outline">Bob</button>
+          <button id="fillCarol" class="btn btn-sm btn-outline">Carol</button>
+        </div>
+
+        <!-- Auth Card (Login / Register) -->
+        <div id="authCard" class="card">
+          <div class="tabs">
+            <div id="loginTab" class="tab active">Sign In</div>
+            <div id="registerTab" class="tab">Register</div>
+          </div>
+
+          <!-- Login Form -->
+          <div id="loginFormContainer">
+            <form id="loginForm">
+              <div class="form-group">
+                <label for="loginEmail">Email Address</label>
+                <input type="email" id="loginEmail" class="form-control" placeholder="user@test.com" required />
+              </div>
+              <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required />
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+            </form>
+          </div>
+
+          <!-- Register Form -->
+          <div id="registerFormContainer" style="display: none;">
+            <form id="registerForm">
+              <div class="form-group">
+                <label for="regName">Full Name</label>
+                <input type="text" id="regName" class="form-control" placeholder="John Doe" />
+              </div>
+              <div class="form-group">
+                <label for="regEmail">Email Address</label>
+                <input type="email" id="regEmail" class="form-control" placeholder="newuser@test.com" required />
+              </div>
+              <div class="form-group">
+                <label for="regPassword">Password (Min 8 chars, 1 number)</label>
+                <input type="password" id="regPassword" class="form-control" placeholder="••••••••" required />
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Active User Profile Card -->
+        <div id="userProfileCard" class="card" style="display: none;">
+          <div class="card-title">
+            <span>👤 Active User Session</span>
+            <button id="logoutBtn" class="btn btn-sm btn-danger">Log Out</button>
+          </div>
+          <div style="font-size: 0.9rem; line-height: 1.6;">
+            <p><strong>Name:</strong> <span id="userName">-</span></p>
+            <p><strong>Email:</strong> <span id="userEmail">-</span></p>
+            <p><strong>User ID:</strong> <code id="userId">-</code></p>
+          </div>
+          
+          <div style="margin-top: 1rem;">
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Decoded JWT Payload (with JTI):</label>
+            <pre id="jwtPayload">-</pre>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Files & IDOR Security Audit Panel -->
+      <div>
+        
+        <!-- Tenant Files Card -->
+        <div class="card">
+          <div class="card-title">
+            <span>📁 My Authorized Files</span>
+            <button id="refreshFilesBtn" class="btn btn-sm btn-outline">🔄 Refresh</button>
+          </div>
+          <div id="filesList">
+            <p class="text-muted">Please log in to view files.</p>
+          </div>
+        </div>
+
+        <!-- IDOR Security Audit Panel Card -->
+        <div class="card" style="border-color: rgba(239, 68, 68, 0.3);">
+          <div class="card-title" style="color: #f87171;">
+            <span>🛡️ IDOR Security Audit Panel</span>
+            <span class="badge badge-danger">Access Control Check</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Test cross-tenant authorization enforcement by attempting to download an arbitrary File UUID (e.g., paste another user's file ID).
+          </p>
+
+          <div class="form-group">
+            <label for="idorInput">Target File UUID</label>
+            <input type="text" id="idorInput" class="form-control" placeholder="e.g. bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" />
+          </div>
+
+          <button id="testIdorBtn" class="btn btn-danger" style="width: 100%;">
+            🔒 Attempt Cross-Tenant Access
+          </button>
+
+          <!-- Audit Response Monitor -->
+          <div id="idorResultContainer" style="display: none; margin-top: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span id="idorStatusCode" style="font-weight: 600; font-size: 0.9rem;">-</span>
+              <span id="idorStatusBadge" class="badge badge-secondary">-</span>
+            </div>
+            <pre id="idorResponseBody">-</pre>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
   <script src="config.js"></script>
-  <script src="mock-api.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

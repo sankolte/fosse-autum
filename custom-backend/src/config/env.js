@@ -1,9 +1,20 @@
-// Environment variable loader and validation using Zod
 require("dotenv").config();
+const { z } = require("zod");
 
-module.exports = {
-  PORT: process.env.PORT || 5000,
-  DATABASE_URL: process.env.DATABASE_URL,
-  JWT_SECRET: process.env.JWT_SECRET || "default_jwt_secret",
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "15m"
-};
+const envSchema = z.object({
+  PORT: z.coerce.number().default(5000),
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is required (pooled connection for Neon)"),
+  DIRECT_URL: z.string().min(1, "DIRECT_URL is required (direct connection for Neon migrations)"),
+  JWT_SECRET: z.string().default("super-secret-key-change-in-production"),
+  JWT_EXPIRES_IN: z.string().default("15m"),
+});
+
+const result = envSchema.safeParse(process.env);
+
+if (!result.success) {
+  const formattedErrors = JSON.stringify(result.error.format(), null, 2);
+  console.error("❌ Environment Variable Validation Error:\n", formattedErrors);
+  throw new Error("Missing or invalid environment variables. Ensure both DATABASE_URL and DIRECT_URL are defined in .env.");
+}
+
+module.exports = result.data;
