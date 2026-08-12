@@ -25,3 +25,11 @@ Express wrapper server mirroring the Osdag Secure Login API contract using the A
    npm run dev
    ```
    The backend server will listen on `http://localhost:5001`.
+
+## Authentication & Session Management
+
+- **Session Creation**: Authentication on `POST /api/auth/login` uses `account.createEmailPasswordSession(email, password)` on an unauthenticated SDK client.
+- **Session Validation**: All protected endpoints (`/api/user/me`, `/api/files`, `/api/files/:id`) use a shared authentication middleware that instantiates a session-scoped client (`createSessionClient(secret)`) and validates the session against Appwrite via `account.get()`. Hand-crafted or forged token strings are rejected with HTTP `401 Unauthorized`.
+- **Session Revocation**: `POST /api/auth/logout` revokes the session on Appwrite servers using `account.deleteSession('current')` and clears the HTTP-only cookie.
+- **Permission Enforcement**: File listing and retrieval use session-scoped `Databases` clients enforcing document-level permissions alongside application-level tenant ownership validation (defense-in-depth).
+

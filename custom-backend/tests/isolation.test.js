@@ -36,8 +36,18 @@ jest.mock("../src/config/prisma", () => {
       }),
     },
     file: {
-      findMany: jest.fn(async ({ where }) => {
-        return Array.from(filesMap.values()).filter((f) => f.userId === where.userId);
+      findMany: jest.fn(async ({ where, select }) => {
+        const matches = Array.from(filesMap.values()).filter((f) => f.userId === where.userId);
+        if (select) {
+          return matches.map((f) => {
+            const res = {};
+            Object.keys(select).forEach((k) => {
+              if (select[k]) res[k] = f[k];
+            });
+            return res;
+          });
+        }
+        return matches;
       }),
       findUnique: jest.fn(async ({ where }) => {
         return filesMap.get(where.id) || null;
@@ -64,6 +74,7 @@ describe("Cross-User File Access Isolation (IDOR Defense)", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.files).toHaveLength(1);
     expect(res.body.files[0].filename).toBe("userA_secret.txt");
+    expect(res.body.files[0].path).toBeUndefined();
   });
 
   it("should deny access with 403 Forbidden when User A attempts to access User B's file", async () => {

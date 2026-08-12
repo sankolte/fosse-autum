@@ -13,7 +13,6 @@ const getFilesForUser = async (userId) => {
     select: {
       id: true,
       filename: true,
-      path: true,
       createdAt: true,
     },
     orderBy: { createdAt: "desc" },

@@ -12,12 +12,24 @@ const databases = new sdk.Databases(client);
 const storage = new sdk.Storage(client);
 const users = new sdk.Users(client);
 
+const createSessionClient = (sessionSecret) => {
+  const sessionClient = new sdk.Client();
+  sessionClient
+    .setEndpoint(process.env.APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1")
+    .setProject(process.env.APPWRITE_PROJECT_ID || "osdag-secure-login");
+  if (sessionSecret) {
+    sessionClient.setSession(sessionSecret);
+  }
+  return sessionClient;
+};
+
 module.exports = {
   client,
   account,
   databases,
   storage,
   users,
+  createSessionClient,
   ID: sdk.ID,
   Permission: sdk.Permission,
   Role: sdk.Role,

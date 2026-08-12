@@ -1,34 +1,26 @@
 const express = require("express");
+const sdk = require("node-appwrite");
 const {
-  databases,
+  databases: adminDatabases,
   storage,
+  createSessionClient,
   Query,
   DATABASE_ID,
   FILES_COLLECTION_ID,
   STORAGE_BUCKET_ID,
 } = require("../config/appwriteClient");
+const authMiddleware = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
-// Helper middleware to extract user from session token
-const extractUser = (req, res, next) => {
-  let token = req.headers.authorization
-    ? req.headers.authorization.replace("Bearer ", "")
-    : req.cookies.token;
-
-  if (!token || !token.startsWith("appwrite-session-")) {
-    return res.status(401).json({ error: "Authentication token missing or invalid" });
-  }
-
-  req.userId = token.replace("appwrite-session-", "");
-  next();
-};
-
 // GET /api/files
-router.get("/", extractUser, async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const response = await databases.listDocuments(DATABASE_ID, FILES_COLLECTION_ID, [
-      Query.equal("userId", req.userId),
+    const sessionClient = createSessionClient(req.appwriteSession);
+    const sessionDatabases = new sdk.Databases(sessionClient);
+
+    const response = await sessionDatabases.listDocuments(DATABASE_ID, FILES_COLLECTION_ID, [
+      Query.equal("userId", req.user.id),
     ]);
 
     const files = response.documents.map((doc) => ({
@@ -45,16 +37,34 @@ router.get("/", extractUser, async (req, res) => {
 });
 
 // GET /api/files/:id
-router.get("/:id", extractUser, async (req, res) => {
+router.get("/:id", authMiddleware, async (req, res) => {
   try {
-    const fileDoc = await databases.getDocument(DATABASE_ID, FILES_COLLECTION_ID, req.params.id);
+    const sessionClient = createSessionClient(req.appwriteSession);
+    const sessionDatabases = new sdk.Databases(sessionClient);
+
+    let fileDoc;
+    try {
+      fileDoc = await sessionDatabases.getDocument(DATABASE_ID, FILES_COLLECTION_ID, req.params.id);
+    } catch (sessionErr) {
+      // Appwrite session client rejected request (permission denied or not found).
+      // Query with admin client strictly to check if the file exists in DB to return 403 vs 404.
+      try {
+        const adminDoc = await adminDatabases.getDocument(DATABASE_ID, FILES_COLLECTION_ID, req.params.id);
+        if (adminDoc) {
+          return res.status(403).json({ error: "Access denied: You do not have permission to access this file" });
+        }
+      } catch (adminErr) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      return res.status(404).json({ error: "File not found" });
+    }
 
     if (!fileDoc) {
       return res.status(404).json({ error: "File not found" });
     }
 
-    // Broken Access Control (IDOR) Protection
-    if (fileDoc.userId !== req.userId) {
+    // Defense-in-depth application ownership check
+    if (fileDoc.userId !== req.user.id) {
       return res.status(403).json({ error: "Access denied: You do not have permission to access this file" });
     }
 

@@ -1,5 +1,7 @@
 const express = require("express");
-const { users, ID } = require("../config/appwriteClient");
+const sdk = require("node-appwrite");
+const { users, ID, createSessionClient } = require("../config/appwriteClient");
+const authMiddleware = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
@@ -40,35 +42,55 @@ router.post("/login", async (req, res, next) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    const userList = await users.list();
-    const user = userList.users.find((u) => u.email === email);
+    // Call account.createEmailPasswordSession using a fresh unauthenticated client
+    const unauthClient = new sdk.Client();
+    unauthClient
+      .setEndpoint(process.env.APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1")
+      .setProject(process.env.APPWRITE_PROJECT_ID || "osdag-secure-login");
 
-    if (!user) {
+    const unauthAccount = new sdk.Account(unauthClient);
+
+    let session;
+    try {
+      session = await unauthAccount.createEmailPasswordSession(email, password);
+    } catch (err) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Return user info and session token simulation
-    const sessionToken = `appwrite-session-${user.$id}`;
+    // Fetch user profile via account.get() using session-scoped client
+    const sessionClient = createSessionClient(session.secret);
+    const sessionAccount = new sdk.Account(sessionClient);
+    const userProfile = await sessionAccount.get();
 
-    res.cookie("token", sessionToken, { httpOnly: true, sameSite: "lax" });
+    res.cookie("token", session.secret, { httpOnly: true, sameSite: "lax" });
     res.status(200).json({
-      token: sessionToken,
+      token: session.secret,
       user: {
-        id: user.$id,
-        email: user.email,
-        name: user.name,
-        createdAt: user.$createdAt,
+        id: userProfile.$id,
+        email: userProfile.email,
+        name: userProfile.name,
+        createdAt: userProfile.$createdAt,
       },
     });
   } catch (error) {
-    res.status(error.code || 500).json({ error: error.message || "Login failed" });
+    res.status(500).json({ error: "Login failed" });
   }
 });
 
 // POST /api/auth/logout
-router.post("/logout", (req, res) => {
-  res.clearCookie("token");
-  res.status(200).json({ message: "Successfully logged out" });
+router.post("/logout", authMiddleware, async (req, res, next) => {
+  try {
+    const sessionClient = createSessionClient(req.appwriteSession);
+    const sessionAccount = new sdk.Account(sessionClient);
+
+    await sessionAccount.deleteSession("current");
+
+    res.clearCookie("token");
+    res.status(200).json({ message: "Successfully logged out" });
+  } catch (error) {
+    res.clearCookie("token");
+    res.status(500).json({ error: "Logout failed" });
+  }
 });
 
 module.exports = router;
