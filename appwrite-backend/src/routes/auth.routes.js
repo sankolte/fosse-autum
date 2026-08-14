@@ -2,6 +2,7 @@ const express = require("express");
 const sdk = require("node-appwrite");
 const { users, ID, createSessionClient } = require("../config/appwriteClient");
 const authMiddleware = require("../middlewares/auth.middleware");
+const { loginRateLimiter } = require("../middlewares/rateLimit.middleware");
 
 const router = express.Router();
 
@@ -34,7 +35,7 @@ router.post("/register", async (req, res, next) => {
 });
 
 // POST /api/auth/login
-router.post("/login", async (req, res, next) => {
+router.post("/login", loginRateLimiter, async (req, res, next) => {
   try {
     const { email, password } = req.body;
 

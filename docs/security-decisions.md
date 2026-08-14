@@ -30,8 +30,8 @@ Traditional stateless JWT tokens cannot be invalidated prior to natural expirati
 ## 3. Rate Limiting & Account Brute-Force Lockout
 
 To defend against credential stuffing and brute-force attacks:
-- **IP-Based Rate Limiting**: `POST /api/auth/login` is rate-limited to 5 requests per 15 minutes per IP address via `express-rate-limit`, responding with `429 Too Many Requests`.
-- **Account Lockout**: After 5 consecutive failed login attempts on a single account, the user account is locked for 15 minutes (`lockedUntil = now + 15m`), responding with `423 Locked`.
+- **IP-Based Rate Limiting**: `POST /api/auth/login` is rate-limited to 5 requests per 15 minutes per IP address via `express-rate-limit` across both backends, responding with `429 Too Many Requests`.
+- **Account Lockout**: After 5 consecutive failed login attempts on a single account, the custom backend locks the user account for 15 minutes (`lockedUntil = now + 15m`), responding with `423 Locked`.
 
 ---
 

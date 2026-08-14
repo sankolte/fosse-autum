@@ -26,7 +26,6 @@ router.get("/", authMiddleware, async (req, res) => {
     const files = response.documents.map((doc) => ({
       id: doc.$id,
       filename: doc.filename,
-      path: doc.path,
       createdAt: doc.$createdAt,
     }));
 
